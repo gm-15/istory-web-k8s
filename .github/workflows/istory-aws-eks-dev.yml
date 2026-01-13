@@ -103,7 +103,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: JAVA build with TEST
-        run: ./gradlew build -x text
+        run: ./gradlew build -x test
 
       - name: Docker 디렉토리로 JAR 파일 복사
         run: |
@@ -145,11 +145,26 @@ jobs:
             --namespace=${{ secrets.K8S_NAMESPACE}} \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: 이미지 태그 업데이트 (kustomize)
+      # - name: 이미지 태그 업데이트 (kustomize)
+      #   run: |
+      #     ls
+      #     cd awsk-eks/overlay/aws-dev
+      #     kustomize edit set image ${{ secrets.DOCKER_USERNAME }}/istory=${{ secrets.DOCKER_USERNAME }}/istory:${{ env.DOCKER_TAG }}
+
+# yq install
+      - name: Install yq
         run: |
-          ls
-          cd awsk-eks/overlay/aws-dev
-          kustomize edit set image ${{ secrets.DOCKER_USERNAME }}/istory=${{ secrets.DOCKER_USERNAME }}/istory:${{ env.DOCKER_TAG }}
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+
+#이미지 태그 변경
+      - name: Update image in patch-deploy.yml (yq)
+        run: |
+          yq -i '
+            (.spec.template.spec.containers[] | select(.name=="istory")).image
+            = "dangtong76/istory:${{ github.sha }}"
+          ' overlay/aws-dev/patch-deploy.yml
 
       - name: 서비스 리포지토리 최종 업데이트
         run: |
