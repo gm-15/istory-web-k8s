@@ -102,7 +102,7 @@ jobs:
       - name: Gradle 설정
         uses: gradle/gradle-build-action@v2
 
-      - name: JAVA build with TEST
+      - name: JAVA build without TEST
         run: ./gradlew build -x test
 
       - name: Docker 디렉토리로 JAR 파일 복사
